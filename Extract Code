@@ -33,7 +33,7 @@ def extract_text_from_dxf(file_path):
         df = pd.DataFrame(data)
 
         directory_path = os.path.dirname(file_path)
-        excel_file_path = os.path.join(directory_path, "BOMBOL.xlsx")
+        excel_file_path = os.path.join(directory_path, "Extracted_Text.xlsx")
 
         df.to_excel(excel_file_path, index=False)
         
