@@ -1,0 +1,63 @@
+import tkinter as tk
+from tkinter import filedialog
+import pandas as pd
+import os
+import ezdxf
+
+def extract_text_from_dxf(file_path):
+    """Extracts text from a DXF file and sums counts for duplicates where text includes '='."""
+    try:
+        doc = ezdxf.readfile(file_path)
+        text_count = {}
+
+        for entity in doc.modelspace().query("TEXT MTEXT"):
+            text = entity.plain_text()
+
+            if '=' in text:
+                key, value = text.split('=')
+                key = key.strip()
+                value = value.strip().rstrip("'")
+
+                try:
+                    value = int(value)
+                except ValueError:
+                    print(f"Skipping invalid numeric value in text: {text}")
+                    continue
+
+                if key in text_count:
+                    text_count[key] += value
+                else:
+                    text_count[key] = value
+
+        data = [{'Text': key, 'Count': f"{key}={count}"} for key, count in text_count.items()]
+        df = pd.DataFrame(data)
+
+        directory_path = os.path.dirname(file_path)
+        excel_file_path = os.path.join(directory_path, "BOMBOL.xlsx")
+
+        df.to_excel(excel_file_path, index=False)
+        
+        # Display message in Tkinter window
+        result_label.config(text=f"-Text with counts has been extracted and saved to {excel_file_path}")
+    except Exception as e:
+        result_label.config(text=f"-An error occurred: {e}")
+
+# Create a simple Tkinter window
+root = tk.Tk()
+root.title("DXF Text Extractor")
+
+# Add a button to open file dialog
+def open_file():
+    file_path = filedialog.askopenfilename(filetypes=[("DXF files", "*.dxf")])
+    if file_path:
+        extract_text_from_dxf(file_path)
+
+open_button = tk.Button(root, text="Select DXF File", command=open_file)
+open_button.pack(pady=10)
+
+# Label to display the result
+result_label = tk.Label(root, text="", wraplength=400)
+result_label.pack(pady=10)
+
+root.geometry("500x200")
+root.mainloop()
